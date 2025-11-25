@@ -1,20 +1,22 @@
 from pathlib import Path
-from decouple import config
+from decouple import Config, RepositoryEnv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_FILE = BASE_DIR / ".env"
+env = Config(RepositoryEnv(str(ENV_FILE))) if ENV_FILE.exists() else config
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config("SECRET_KEY")
+SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DEBUG", default=False, cast=bool)
+DEBUG = env("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = config(
+ALLOWED_HOSTS = env(
     "ALLOWED_HOSTS", default="", cast=lambda v: [h.strip() for h in v.split(",") if h.strip()]
 )
 
@@ -111,7 +113,7 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-SESSION_COOKIE_NAME = config("SESSION_COOKIE_NAME", default="sessionid")
+SESSION_COOKIE_NAME = env("SESSION_COOKIE_NAME", default="sessionid")
 SESSION_COOKIE_SAMESITE = None
 SESSION_COOKIE_SECURE = not DEBUG
 
@@ -121,7 +123,7 @@ REST_FRAMEWORK = {
     ]
 }
 
-CORS_ALLOWED_ORIGINS = config(
+CORS_ALLOWED_ORIGINS = env(
     "CORS_ALLOWED_ORIGINS",
     default="",
     cast=lambda v: [origin.strip() for origin in v.split(",") if origin.strip()],
