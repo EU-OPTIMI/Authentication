@@ -129,6 +129,11 @@ CORS_ALLOWED_ORIGINS = env(
     cast=lambda v: [origin.strip() for origin in v.split(",") if origin.strip()],
 )
 CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = env(
+    "CSRF_TRUSTED_ORIGINS",
+    default="",
+    cast=lambda v: [origin.strip() for origin in v.split(",") if origin.strip()],
+)
 
 AUTH_USER_MODEL = "accounts.User"
 

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #0f172a;
+            --card: #111827;
+            --accent: #22d3ee;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --danger: #f87171;
+            --success: #34d399;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Inter", system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at 20% 20%, #0ea5e9 0, transparent 25%),
+                        radial-gradient(circle at 80% 0%, #22d3ee 0, transparent 20%),
+                        radial-gradient(circle at 40% 80%, #6366f1 0, transparent 25%),
+                        var(--bg);
+            color: var(--text);
+            display: grid;
+            place-items: center;
+            padding: 32px;
+        }
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--card);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 18px;
+            padding: 28px 26px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            margin: 0 0 8px;
+            font-size: 26px;
+            letter-spacing: 0.01em;
+        }
+        p.sub {
+            margin: 0 0 20px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+        label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: var(--muted);
+        }
+        input {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 12px 12px;
+            font-size: 15px;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.1s;
+        }
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(34,211,238,0.2);
+            transform: translateY(-1px);
+        }
+        .field {
+            margin-bottom: 14px;
+        }
+        button {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            padding: 13px 12px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            background: linear-gradient(135deg, #22d3ee, #6366f1);
+            color: #0b1021;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s, filter 0.2s;
+            box-shadow: 0 10px 30px rgba(99,102,241,0.35);
+        }
+        button:hover { filter: brightness(1.05); }
+        button:active { transform: translateY(1px); }
+        .status {
+            margin-top: 12px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+        .status.error { color: var(--danger); }
+        .status.success { color: var(--success); }
+        .hint {
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+        }
+        .small {
+            font-size: 13px;
+            color: var(--muted);
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Sign in</h1>
+        <p class="sub">Authenticate to continue</p>
+        <form id="login-form">
+            {% csrf_token %}
+            <div class="field">
+                <label for="username">Email or Username</label>
+                <input id="username" name="username" type="text" autocomplete="username" required />
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required />
+            </div>
+            <button type="submit">Log in</button>
+            <div id="status" class="status"></div>
+            <div class="small">Session cookie: <code>{{ request.session.session_key|default:"(set on login)" }}</code></div>
+        </form>
+        <div class="hint">We set a session cookie on success. You can close this tab after login.</div>
+    </div>
+
+    <script>
+        const form = document.getElementById("login-form");
+        const statusEl = document.getElementById("status");
+        const nextUrl = new URLSearchParams(window.location.search).get("next") || "/";
+
+        function getCookie(name) {
+            return document.cookie.split("; ").find(row => row.startsWith(name + "="))?.split("=")[1];
+        }
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            statusEl.textContent = "Signing in...";
+            statusEl.className = "status";
+
+            const payload = {
+                username: form.username.value,
+                password: form.password.value,
+            };
+
+            try {
+                const res = await fetch("/api/auth/login/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken") || "",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    statusEl.textContent = data.detail || "Login failed";
+                    statusEl.className = "status error";
+                    return;
+                }
+
+                statusEl.textContent = "Success! Redirecting...";
+                statusEl.className = "status success";
+                setTimeout(() => { window.location.href = nextUrl; }, 400);
+            } catch (err) {
+                statusEl.textContent = "Network error. Try again.";
+                statusEl.className = "status error";
+            }
+        });
+    </script>
+</body>
+</html>

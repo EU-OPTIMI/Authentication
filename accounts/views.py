@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.views.generic import TemplateView
 from rest_framework import permissions, status, views
 from rest_framework.response import Response
 
@@ -36,3 +37,7 @@ class LogoutView(views.APIView):
     def post(self, request):
         logout(request)
         return Response({"detail": "ok"})
+
+
+class LoginTemplateView(TemplateView):
+    template_name = "accounts/login.html"
