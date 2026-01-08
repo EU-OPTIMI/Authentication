@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.views.generic import TemplateView
 from rest_framework import permissions, status, views
 from rest_framework.response import Response
+from django.shortcuts import redirect
 
 
 class MeView(views.APIView):
@@ -41,3 +42,10 @@ class LogoutView(views.APIView):
 
 class LoginTemplateView(TemplateView):
     template_name = "accounts/login.html"
+
+
+
+def browser_logout(request):
+    logout(request)
+    next_url = request.GET.get("next", "/")
+    return redirect(next_url)    
