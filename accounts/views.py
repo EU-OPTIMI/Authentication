@@ -53,28 +53,39 @@ def browser_logout(request):
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import User
+from .models import User, ProvidedOffer
 from .serializers import ProviderSerializer, ConsumerSerializer
 
 class ProviderViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = ProviderSerializer
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='set-provided-offers')
     def set_provided_offers(self, request, pk=None):
         user = self.get_object()
         offer_ids = request.data.get('offer_ids', [])
         if not isinstance(offer_ids, list):
             return Response({"error": "offer_ids must be a list"}, status=400)
-        user.provided_offer_ids = offer_ids
-        user.is_provider = True
-        user.save()
-        return Response({"status": "provided_offer_ids set", "provided_offer_ids": offer_ids})
 
-    @action(detail=True, methods=['get'])
+        created_offers = []
+        for offer_id in offer_ids:
+            obj, created = ProvidedOffer.objects.get_or_create(
+                user=user,
+                offer_id=offer_id
+            )
+            if created:
+                created_offers.append(str(offer_id))
+
+        return Response({
+            "status": "provided_offer_ids added",
+            "added_offer_ids": created_offers
+        })
+
+    @action(detail=True, methods=['get'], url_path='get-provided-offers')
     def get_provided_offers(self, request, pk=None):
         user = self.get_object()
-        return Response({"provided_offer_ids": user.provided_offer_ids})
+        offer_ids = list(user.provided_offers.values_list('offer_id', flat=True))
+        return Response({"provided_offer_ids": offer_ids})
 
 
 class ConsumerViewSet(viewsets.ModelViewSet):
