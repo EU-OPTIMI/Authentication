@@ -1,0 +1,20 @@
+services:
+  provide:
+    build: .
+    #command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - .env:/app/.env
+      # Persistent volumes for data (mounting directories, not files)
+      - media_data:/app/media
+      - uploads_data:/app/uploads
+    ports:
+      - "8001:8000"
+
+# Named volumes for persistence
+volumes:
+  media_data:
+    driver: local
+  uploads_data:
+    driver: local
