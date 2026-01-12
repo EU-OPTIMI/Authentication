@@ -1,24 +1,34 @@
 FROM python:3.9-slim
- 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
- 
+
+# Prevent Python from writing pyc files and enable unbuffered stdout
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Set working directory
 WORKDIR /app
- 
-COPY requirements.txt /app/
- 
-RUN apt-get update && apt-get install -y \
-    libgl1 \
-    libglib2.0-0 \
-    procps \
-    && pip install --upgrade pip \
-    && pip install -r requirements.txt \
-    && apt-get clean \
+
+# Install system dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       ca-certificates \
+       libgl1 \
+       libglib2.0-0 \
+       procps \
+       build-essential \
     && rm -rf /var/lib/apt/lists/*
- 
-COPY . /app/
- 
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Upgrade pip and install Python dependencies
+RUN pip install --upgrade pip \
+    && pip install -r requirements.txt
+
+# Copy the rest of the application
+COPY . .
+
+# Expose port for Django development server
 EXPOSE 8000
- 
-#CMD ["gunicorn", "--bind", "0.0.0.0:8000", "core.wsgi:application"]
+
+# Default command
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
