@@ -49,3 +49,50 @@ def browser_logout(request):
     logout(request)
     next_url = request.GET.get("next", "/")
     return redirect(next_url)    
+
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .models import User
+from .serializers import ProviderSerializer, ConsumerSerializer
+
+class ProviderViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = ProviderSerializer
+
+    @action(detail=True, methods=['post'])
+    def set_provided_offers(self, request, pk=None):
+        user = self.get_object()
+        offer_ids = request.data.get('offer_ids', [])
+        if not isinstance(offer_ids, list):
+            return Response({"error": "offer_ids must be a list"}, status=400)
+        user.provided_offer_ids = offer_ids
+        user.is_provider = True
+        user.save()
+        return Response({"status": "provided_offer_ids set", "provided_offer_ids": offer_ids})
+
+    @action(detail=True, methods=['get'])
+    def get_provided_offers(self, request, pk=None):
+        user = self.get_object()
+        return Response({"provided_offer_ids": user.provided_offer_ids})
+
+
+class ConsumerViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = ConsumerSerializer
+
+    @action(detail=True, methods=['post'])
+    def set_consumed_offers(self, request, pk=None):
+        user = self.get_object()
+        offer_ids = request.data.get('offer_ids', [])
+        if not isinstance(offer_ids, list):
+            return Response({"error": "offer_ids must be a list"}, status=400)
+        user.consumed_offer_ids = offer_ids
+        user.is_consumer = True
+        user.save()
+        return Response({"status": "consumed_offer_ids set", "consumed_offer_ids": offer_ids})
+
+    @action(detail=True, methods=['get'])
+    def get_consumed_offers(self, request, pk=None):
+        user = self.get_object()
+        return Response({"consumed_offer_ids": user.consumed_offer_ids})
