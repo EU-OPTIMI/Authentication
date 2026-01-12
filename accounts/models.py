@@ -35,3 +35,24 @@ class ProvidedOffer(models.Model):
 
     def __str__(self):
         return f"{self.offer_id} by {self.user}"
+    
+    
+    
+
+
+class ConsumedOffer(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="consumed_offers"
+    )
+    offer_id = models.UUIDField()  # or CharField if IDs are strings
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "offer_id")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.offer_id} consumed by {self.user}"

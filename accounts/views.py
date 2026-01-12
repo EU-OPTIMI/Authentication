@@ -53,7 +53,7 @@ def browser_logout(request):
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import User, ProvidedOffer
+from .models import User, ProvidedOffer, ConsumedOffer
 from .serializers import ProviderSerializer, ConsumerSerializer
 
 class ProviderViewSet(viewsets.ModelViewSet):
@@ -88,22 +88,38 @@ class ProviderViewSet(viewsets.ModelViewSet):
         return Response({"provided_offer_ids": offer_ids})
 
 
+
 class ConsumerViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = ConsumerSerializer
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='set-consumed-offers')
     def set_consumed_offers(self, request, pk=None):
         user = self.get_object()
         offer_ids = request.data.get('offer_ids', [])
         if not isinstance(offer_ids, list):
             return Response({"error": "offer_ids must be a list"}, status=400)
-        user.consumed_offer_ids = offer_ids
+
+        created_offers = []
+        for offer_id in offer_ids:
+            obj, created = ConsumedOffer.objects.get_or_create(
+                user=user,
+                offer_id=offer_id
+            )
+            if created:
+                created_offers.append(str(offer_id))
+
+        # mark user as consumer
         user.is_consumer = True
         user.save()
-        return Response({"status": "consumed_offer_ids set", "consumed_offer_ids": offer_ids})
 
-    @action(detail=True, methods=['get'])
+        return Response({
+            "status": "consumed_offer_ids added",
+            "added_offer_ids": created_offers
+        })
+
+    @action(detail=True, methods=['get'], url_path='get-consumed-offers')
     def get_consumed_offers(self, request, pk=None):
         user = self.get_object()
-        return Response({"consumed_offer_ids": user.consumed_offer_ids})
+        offer_ids = list(user.consumed_offers.values_list('offer_id', flat=True))
+        return Response({"consumed_offer_ids": offer_ids})
