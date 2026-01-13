@@ -11,13 +11,17 @@ env = Config(RepositoryEnv(str(ENV_FILE))) if ENV_FILE.exists() else config
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env("SECRET_KEY")
+SECRET_KEY = env("DJANGO_SECRET_KEY", default=env("SECRET_KEY", default=None))
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY not found. Set DJANGO_SECRET_KEY or SECRET_KEY.")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG", default=False, cast=bool)
+DEBUG = env("DJANGO_DEBUG", default=env("DEBUG", default=False), cast=bool)
 
 ALLOWED_HOSTS = env(
-    "ALLOWED_HOSTS", default="", cast=lambda v: [h.strip() for h in v.split(",") if h.strip()]
+    "DJANGO_ALLOWED_HOSTS",
+    default=env("ALLOWED_HOSTS", default=""),
+    cast=lambda v: [h.strip() for h in v.split(",") if h.strip()],
 )
 
 
@@ -71,8 +75,8 @@ WSGI_APPLICATION = "auth_service.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": env("DJANGO_DB_ENGINE", default="django.db.backends.sqlite3"),
+        "NAME": env("DJANGO_DB_NAME", default=str(BASE_DIR / "db.sqlite3")),
     }
 }
 
@@ -99,9 +103,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = env("DJANGO_LANGUAGE_CODE", default="en-us")
 
-TIME_ZONE = "UTC"
+TIME_ZONE = env("DJANGO_TIME_ZONE", default="UTC")
 
 USE_I18N = True
 
@@ -111,7 +115,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = env("DJANGO_STATIC_URL", default="static/")
 
 SESSION_COOKIE_NAME = env("SESSION_COOKIE_NAME", default="sessionid")
 SESSION_COOKIE_SAMESITE = None
